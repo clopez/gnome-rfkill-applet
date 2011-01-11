@@ -4,7 +4,7 @@
  * of RF devices with a simple click on the applet’s icon.
  * The device manipulation is done using the special device /dev/rfkill
  *
- * Copyright (C) 2010 Carlos Alberto Lopez Perez <clopez@igalia.com>
+ * Copyright (C) 2011 Carlos Alberto Lopez Perez <clopez@igalia.com>
  *
  * Applet code based on Gnome Power Inhibit Applet
  * http://projects.gnome.org/gnome-power-manager/
@@ -33,78 +33,9 @@
 #include <gtk/gtk.h>
 #include <glib-object.h>
 
-#define RFK_APPLET_ICON_NOKILLED     "rfkill-applet-a"
-#define RFK_APPLET_ICON_KILLED       "rfkill-applet-b"
-#define RFK_INHIBIT_APPLET_OAFID     "OAFIID:RFKillApplet"
-#define RFK_INHIBIT_APPLET_FACTORY_OAFID "OAFIID:RFKillApplet_Factory"
+#include "rfkillapplet.h"
 
-#define RFK_INHIBIT_APPLET_NAME         _("RFKill Applet")
-#define RFK_INHIBIT_APPLET_DESC         _("Allows user to inhibit the emission of radiation of RF devices.")
-#define ICON_DATA "/usr/share/icons/hicolor"
-
-#define RFK_TYPE_INHIBIT_APPLET     (rfk_inhibit_applet_get_type ())
-#define RFK_INHIBIT_APPLET(o)       (G_TYPE_CHECK_INSTANCE_CAST ((o), RFK_TYPE_INHIBIT_APPLET, RFKillApplet))
-#define RFK_INHIBIT_APPLET_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), RFK_TYPE_INHIBIT_APPLET, RFKillAppletClass))
-#define RFK_IS_INHIBIT_APPLET(o)    (G_TYPE_CHECK_INSTANCE_TYPE ((o), RFK_TYPE_INHIBIT_APPLET))
-#define RFK_IS_INHIBIT_APPLET_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), RFK_TYPE_INHIBIT_APPLET))
-#define RFK_INHIBIT_APPLET_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), RFK_TYPE_INHIBIT_APPLET, RFKillAppletClass))
-
-
-typedef struct{
-    PanelApplet parent;
-    /* applet state */
-    guint cookie;
-    /* the icon and a cache for size*/
-    GdkPixbuf *icon;
-    gint icon_width, icon_height;
-    guint level;
-    gboolean killed;
-    /* a cache for panel size */
-    gint size;
-} RFKillApplet;
-
-
-typedef struct{
-    PanelAppletClass    parent_class;
-} RFKillAppletClass;
-
-GType                rfk_inhibit_applet_get_type  (void);
-
-
-
-static void      rfk_inhibit_applet_class_init (RFKillAppletClass *klass);
-static void      rfk_inhibit_applet_init       (RFKillApplet *applet);
-
-G_DEFINE_TYPE (RFKillApplet, rfk_inhibit_applet, PANEL_TYPE_APPLET)
-
-static void rfk_applet_get_icon         (RFKillApplet *applet);
-static void rfk_applet_check_size       (RFKillApplet *applet);
-static gboolean rfk_applet_draw_cb      (RFKillApplet *applet);
-static void rfk_applet_update_tooltip   (RFKillApplet *applet);
-static gboolean rfk_applet_click_cb     (RFKillApplet *applet, GdkEventButton *event);
-static void rfk_applet_dialog_about_cb  (BonoboUIComponent *uic, gpointer data, const gchar *verbname);
-static gboolean rfk_applet_bonobo_cb    (PanelApplet *_applet, const gchar *iid, gpointer data);
-static void rfk_applet_destroy_cb       (GtkObject *object);
-
-
-#define PANEL_APPLET_VERTICAL(p)                    \
-     (((p) == PANEL_APPLET_ORIENT_LEFT) || ((p) == PANEL_APPLET_ORIENT_RIGHT))
-
-
-
-
-/**
- * rfk_inhibit_applet_class_init:
- * @klass: Class instance
- **/
-static void
-rfk_inhibit_applet_class_init (RFKillAppletClass *class)
-{
-    /* nothing to do here */
-}
-
-
-
+#include "rfkilldevice.c"
 
 
 /**
@@ -120,33 +51,21 @@ rfk_applet_click_cb (RFKillApplet *applet, GdkEventButton *event)
     if (event->button != 1) {
         return FALSE;
     }
-    /*
-    if (applet->cookie > 0) {
-        g_debug ("uninhibiting %u", applet->cookie);
-        rfk_applet_uninhibit (applet, applet->cookie);
-        applet->cookie = 0;
-    } else {
-        g_debug ("inhibiting");
-        rfk_applet_inhibit (applet,
-                      RFK_INHIBIT_APPLET_NAME,
-                      _("Manual inhibit"),
-                      &(applet->cookie));
-    }
-    */
-    // change status
-    if (applet->killed == FALSE) {
-        applet->killed = TRUE;
-    } else {
-        applet->killed = FALSE;
-    }
-    /* update icon */
-    rfk_applet_get_icon (applet);
-    rfk_applet_check_size (applet);
-    rfk_applet_update_tooltip (applet);
-    rfk_applet_draw_cb (applet);
 
-    return TRUE;
+	/* Try to flip-flop our status */
+	rfkill_change_status(applet);
+	/* Don't trust anybody. Simply check our status */
+	rfkill_get_status(applet);
+	/* Update applet status */
+	rfk_applet_get_icon (applet);
+	rfk_applet_check_size (applet);
+	rfk_applet_update_tooltip (applet);
+	rfk_applet_draw_cb (applet);
+
+	return TRUE;
 }
+
+
 
 
 /**
@@ -158,21 +77,7 @@ rfk_applet_click_cb (RFKillApplet *applet, GdkEventButton *event)
 static void
 rfk_applet_update_tooltip (RFKillApplet *applet)
 {
-    const gchar *buf;
-
-    /*
-    if (applet->proxy == NULL) {
-        buf = _("Cannot connect to gnome-power-manager");
-    } else {
-        if (applet->cookie > 0) {
-            buf = _("Automatic sleep inhibited");
-        } else {
-            buf = _("Automatic sleep enabled");
-        }
-    }
-    */
-    buf = _("Wireless LAN (phy0)\n\tSoft blocked: yes\n\tHard blocked: no\n\nBluetooth (hci0)\n\tSoft blocked: yes\n\tHard blocked: no");
-    gtk_widget_set_tooltip_text (GTK_WIDGET(applet), buf);
+    gtk_widget_set_tooltip_text (GTK_WIDGET(applet), applet->tooltip );
 }
 
 
@@ -186,14 +91,15 @@ rfk_applet_destroy_cb (GtkObject *object)
 {
     RFKillApplet *applet = RFK_INHIBIT_APPLET(object);
 
-    /*
-    if (applet->monitor != NULL) {
-        g_object_unref (applet->monitor);
+    /* Free the memory allocated */
+
+    if (applet->tooltip != NULL) {
+        g_object_unref (applet->tooltip);
     }
     if (applet->icon != NULL) {
         g_object_unref (applet->icon);
     }
-    */
+
 }
 
 /**
@@ -218,11 +124,14 @@ rfk_applet_get_icon (RFKillApplet *applet)
     }
 
     /* get icon */
-    if (applet->killed == FALSE) {
-        icon = RFK_APPLET_ICON_NOKILLED;
-    } else {
+    if ( applet->status == RADIATION_EMITTING ) {
+        icon = RFK_APPLET_ICON_EMITTING;
+
+    } else if ( applet->status == RADIATION_KILLED ) {
         icon = RFK_APPLET_ICON_KILLED;
-    }
+
+    } else icon = RFK_APPLET_ICON_UNKNOW;
+
     applet->icon = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
                          icon,
                          applet->size - 2,
@@ -360,17 +269,13 @@ rfk_inhibit_applet_init (RFKillApplet *applet)
 
     /* initialize fields */
     applet->size = 0;
-    applet->icon = NULL;
-    applet->cookie = 0;
-    //applet->connection = NULL;
-    applet->killed = FALSE;
+
+    /* check /dev/rfkill and set the status and tooltip */
+    rfkill_get_status(applet);
 
     /* Add application specific icons to search path */
     gtk_icon_theme_append_search_path (gtk_icon_theme_get_default (),
                                            ICON_DATA G_DIR_SEPARATOR_S "icons");
-
-
-
 
     /* prepare */
     panel_applet_set_flags (PANEL_APPLET (applet), PANEL_APPLET_EXPAND_MINOR);

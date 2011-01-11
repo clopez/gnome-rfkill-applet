@@ -5,7 +5,7 @@ ICONDIR=/usr/share/icons/hicolor
 PIXMAPDIR=/usr/share/pixmaps
 CFLAGS=$(shell pkg-config --cflags --libs libpanelapplet-2.0)
 ICONSIZES=16x16 22x22 24x24 32x32
-ICONS=rfkill-applet-a.png rfkill-applet-b.png
+ICONS=rfkill-applet-a.png rfkill-applet-b.png rfkill-applet-c.png
 
 all: build/icons build/rfkillapplet
 
@@ -17,7 +17,7 @@ build/icons:
 	)
 
 build/rfkillapplet:
-	$(CC) $(CFLAGS) src/rfkillapplet.c $< -o $@
+	$(CC) $(CFLAGS) src/rfkillapplet.c -o $@
 
 install:
 	mkdir -p $(INSTALLDIR)
