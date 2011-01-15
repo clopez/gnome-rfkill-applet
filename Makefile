@@ -2,6 +2,7 @@ CC=gcc
 INSTALLDIR=/usr/lib/rfkillapplet
 BONOBODIR=/usr/lib/bonobo/servers
 ICONDIR=/usr/share/icons/hicolor
+XMLDIR=/usr/share/gnome-2.0/ui/
 PIXMAPDIR=/usr/share/pixmaps
 CFLAGS=$(shell pkg-config --cflags --libs libpanelapplet-2.0)
 ICONSIZES=16x16 22x22 24x24 32x32
@@ -24,6 +25,7 @@ install:
 	cp build/rfkillapplet $(INSTALLDIR)
 	mkdir -p $(BONOBODIR)
 	cp src/RFKillApplet.server $(BONOBODIR)
+	cp src/RFKillApplet.xml $(XMLDIR)
 	cp -r build/icons/* $(ICONDIR)
 	cp icons/* $(PIXMAPDIR)
 

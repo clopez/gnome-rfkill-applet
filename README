@@ -1,0 +1,22 @@
+BUILD INSTRUCTIONS
+------------------
+
+* First, install build dependencies.
+  On Debian / Ubuntu just install the following packages:
+    sudo apt-get install build-essential libpanel-applet2-dev imagemagick
+
+* Then build it::
+    make
+
+* And install it::
+    sudo make install
+
+
+Now restart your gnome session and add the applet to the panel.
+
+
+SYSTEM PATHS
+------------
+
+* The paths are the standard of Debian systems and are hardcoded in the files
+  "Makefile" and "src/rfkillapplet.h", change them if you need.

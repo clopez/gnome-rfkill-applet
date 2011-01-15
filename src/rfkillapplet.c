@@ -39,10 +39,37 @@
 
 
 /**
- * rfk_applet_click_cb:
- * @applet: Inhibit applet instance
+ * rfk_applet_update_status:
+ * @applet: RFKill applet instance
  *
- * pops and unpops
+ * Update rfkill applet status and redraws the icon and tooltip. We are
+ * called each RFKILL_CHECK_INTERVAL seconds and we always return TRUE
+ * to make the function g_timeout_add_secondsalways call us forever.
+ *
+ **/
+
+static gboolean
+rfk_applet_update_status (RFKillApplet *applet)
+{
+
+    /* Update applet status */
+    rfkill_get_status(applet);
+    /* Update applet icon and tooltip */
+    rfk_applet_get_icon (applet);
+    rfk_applet_check_size (applet);
+    rfk_applet_update_tooltip (applet);
+    rfk_applet_draw_cb (applet);
+
+    return TRUE;
+}
+
+/**
+ * rfk_applet_click_cb:
+ * @applet: RFKill applet instance
+ *
+ * Called when the user clicks on the applet. We simply
+ * call rfkill_change_status to flip-flop our current status.
+ *
  **/
 static gboolean
 rfk_applet_click_cb (RFKillApplet *applet, GdkEventButton *event)
@@ -52,17 +79,82 @@ rfk_applet_click_cb (RFKillApplet *applet, GdkEventButton *event)
         return FALSE;
     }
 
-	/* Try to flip-flop our status */
-	rfkill_change_status(applet);
-	/* Don't trust anybody. Simply check our status */
-	rfkill_get_status(applet);
-	/* Update applet status */
-	rfk_applet_get_icon (applet);
-	rfk_applet_check_size (applet);
-	rfk_applet_update_tooltip (applet);
-	rfk_applet_draw_cb (applet);
+    /* Try to flip-flop our status */
+    rfkill_change_status(applet);
 
-	return TRUE;
+    /* We don't call to update the status. We expect it to be automatically
+     * autoupdated in RFKILL_CHECK_INTERVAL seconds by the callback defined
+     * in rfk_applet_bonobo_cb() -> g_timeout_add_seconds */
+
+    return TRUE;
+}
+
+
+/**
+ * rfk_applet_dialog_about_cb:
+ *
+ * Displays the about dialog.
+ **/
+static void
+rfk_applet_dialog_about_cb (BonoboUIComponent *uic, gpointer data, const gchar *verbname)
+{
+    GtkAboutDialog *about;
+
+    GdkPixbuf *logo =
+        gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
+                      RFK_APPLET_ICON_EMITTING,
+                      128, 0, NULL);
+
+    static const gchar *authors[] = {
+        "Carlos Alberto Lopez Perez <clopez@igalia.com>",
+        NULL
+    };
+
+    static const gchar *artists [] = {
+        "Carlos Alberto Lopez Perez <clopez@igalia.com>",
+        NULL
+    };
+    const char *license[] = {
+         N_("Licensed under the GNU General Public License Version 2"),
+         N_("Power Manager is free software; you can redistribute it and/or\n"
+           "modify it under the terms of the GNU General Public License\n"
+           "as published by the Free Software Foundation; either version 2\n"
+           "of the License, or (at your option) any later version."),
+         N_("RFKill Applet is distributed in the hope that it will be useful,\n"
+           "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+           "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+           "GNU General Public License for more details."),
+         N_("You should have received a copy of the GNU General Public License\n"
+           "along with this program; if not, write to the Free Software\n"
+           "Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA\n"
+           "02110-1301, USA.")
+    };
+    const char *translator_credits = NULL;
+    char       *license_trans;
+
+    license_trans = g_strconcat (_(license[0]), "\n\n", _(license[1]), "\n\n",
+                     _(license[2]), "\n\n", _(license[3]), "\n", NULL);
+
+    about = (GtkAboutDialog*) gtk_about_dialog_new ();
+    gtk_about_dialog_set_program_name (about, RFK_INHIBIT_APPLET_NAME);
+    gtk_about_dialog_set_version (about, RFK_APPLET_VERSION);
+    gtk_about_dialog_set_copyright (about,
+        _("\xc2\xa9 2011 Carlos Alberto Lopez Perez <clopez@igalia.com>"));
+    gtk_about_dialog_set_comments (about, RFK_INHIBIT_APPLET_DESC);
+    gtk_about_dialog_set_authors (about, authors);
+    gtk_about_dialog_set_artists (about, artists);
+    gtk_about_dialog_set_translator_credits (about, translator_credits);
+    gtk_about_dialog_set_logo (about, logo);
+    gtk_about_dialog_set_license (about, license_trans);
+    gtk_about_dialog_set_website (about, RFK_HOMEPAGE_URL);
+
+    g_signal_connect (G_OBJECT(about), "response",
+              G_CALLBACK(gtk_widget_destroy), NULL);
+
+    gtk_widget_show (GTK_WIDGET(about));
+
+    g_free (license_trans);
+    g_object_unref (logo);
 }
 
 
@@ -70,9 +162,10 @@ rfk_applet_click_cb (RFKillApplet *applet, GdkEventButton *event)
 
 /**
  * rfk_applet_update_tooltip:
- * @applet: Inhibit applet instance
+ * @applet: RFKill applet instance
  *
- * sets tooltip's content (percentage or disabled)
+ * Updates the content of tooltip (detailed status of radiation parameters
+ * from devices) and redraws it.
  **/
 static void
 rfk_applet_update_tooltip (RFKillApplet *applet)
@@ -81,21 +174,17 @@ rfk_applet_update_tooltip (RFKillApplet *applet)
 }
 
 
-
 /**
  * rfk_applet_destroy_cb:
  * @object: Class instance to destroy
+ *
+ * Called when the applet is destroyed.
  **/
 static void
 rfk_applet_destroy_cb (GtkObject *object)
 {
     RFKillApplet *applet = RFK_INHIBIT_APPLET(object);
 
-    /* Free the memory allocated */
-
-    if (applet->tooltip != NULL) {
-        g_object_unref (applet->tooltip);
-    }
     if (applet->icon != NULL) {
         g_object_unref (applet->icon);
     }
@@ -104,9 +193,9 @@ rfk_applet_destroy_cb (GtkObject *object)
 
 /**
  * rfk_applet_get_icon:
- * @applet: Inhibit applet instance
+ * @applet: RFKill applet instance
  *
- * retrieve an icon from stock with a size adapted to panel
+ * Updates the icon to show, adapts the size to panel and displays the icon.
  **/
 static void
 rfk_applet_get_icon (RFKillApplet *applet)
@@ -144,8 +233,8 @@ rfk_applet_get_icon (RFKillApplet *applet)
 }
 
 /**
- * rfk_applet_check_size:
- * @applet: Inhibit applet instance
+ * rfk_applet_check_size
+ * @applet: RFKill applet instance
  *
  * check if panel size has changed and applet adapt size
  **/
@@ -163,7 +252,7 @@ rfk_applet_check_size (RFKillApplet *applet)
             rfk_applet_get_icon (applet);
             gtk_widget_set_size_request (GTK_WIDGET(applet), applet->size, applet->icon_height + 2);
         }
-        /* Adjusting incase the icon size has changed */
+        /* Adjusting if the icon size has changed */
         if (allocation.height < applet->icon_height + 2) {
             gtk_widget_set_size_request (GTK_WIDGET(applet), applet->size, applet->icon_height + 2);
         }
@@ -173,7 +262,7 @@ rfk_applet_check_size (RFKillApplet *applet)
             rfk_applet_get_icon (applet);
             gtk_widget_set_size_request (GTK_WIDGET(applet), applet->icon_width + 2, applet->size);
         }
-        /* Adjusting incase the icon size has changed */
+        /* Adjusting if the icon size has changed */
         if (allocation.width < applet->icon_width + 2) {
             gtk_widget_set_size_request (GTK_WIDGET(applet), applet->icon_width + 2, applet->size);
         }
@@ -183,6 +272,7 @@ rfk_applet_check_size (RFKillApplet *applet)
 
 /**
  * rfk_applet_change_background_cb:
+ * @applet: RFKill applet instance
  *
  * Enqueues an expose event (don't know why it's not the default behaviour)
  **/
@@ -196,7 +286,7 @@ rfk_applet_change_background_cb (RFKillApplet *applet,
 
 /**
  * rfk_applet_draw_cb:
- * @applet: Inhibit applet instance
+ * @applet: RFKill applet instance
  *
  * draws applet content (background + icon)
  **/
@@ -260,7 +350,7 @@ rfk_applet_draw_cb (RFKillApplet *applet)
 
 /**
  * rfk_inhibit_applet_init:
- * @applet: Inhibit applet instance
+ * @applet: RFKill applet instance
  **/
 static void
 rfk_inhibit_applet_init (RFKillApplet *applet)
@@ -275,7 +365,7 @@ rfk_inhibit_applet_init (RFKillApplet *applet)
 
     /* Add application specific icons to search path */
     gtk_icon_theme_append_search_path (gtk_icon_theme_get_default (),
-                                           ICON_DATA G_DIR_SEPARATOR_S "icons");
+                                           ICON_DATADIR G_DIR_SEPARATOR_S "icons");
 
     /* prepare */
     panel_applet_set_flags (PANEL_APPLET (applet), PANEL_APPLET_EXPAND_MINOR);
@@ -309,6 +399,8 @@ rfk_inhibit_applet_init (RFKillApplet *applet)
               G_CALLBACK(rfk_applet_destroy_cb), NULL);
 }
 
+
+
 /**
  * rfk_applet_bonobo_cb:
  * @_applet: RFKillApplet instance created by the bonobo factory
@@ -321,24 +413,32 @@ rfk_applet_bonobo_cb (PanelApplet *_applet, const gchar *iid, gpointer data)
 {
     RFKillApplet *applet = RFK_INHIBIT_APPLET(_applet);
 
-    /*
+
     static BonoboUIVerb verbs [] = {
         BONOBO_UI_VERB ("About", rfk_applet_dialog_about_cb),
-        BONOBO_UI_VERB ("Help", rfk_applet_help_cb),
         BONOBO_UI_VERB_END
     };
-    */
+
     if (strcmp (iid, RFK_INHIBIT_APPLET_OAFID) != 0) {
         return FALSE;
     }
 
-    /*
+
     panel_applet_setup_menu_from_file (PANEL_APPLET (applet),
-                       DATADIR,
-                       "GNOME_InhibitApplet.xml",
+                       XML_DATADIR,
+                       "RFKillApplet.xml",
                        NULL, verbs, applet);
-    */
+
+
+
+
+    /* Update each RFKILL_CHECK_INTERVAL seconds our status */
+     g_timeout_add_seconds (RFKILL_CHECK_INTERVAL,
+                           (GSourceFunc) rfk_applet_update_status,
+                           (gpointer) applet);
+
     rfk_applet_draw_cb (applet);
+
     return TRUE;
 }
 
@@ -350,7 +450,7 @@ rfk_applet_bonobo_cb (PanelApplet *_applet, const gchar *iid, gpointer data)
 PANEL_APPLET_BONOBO_FACTORY
      (/* the factory iid */
      RFK_INHIBIT_APPLET_FACTORY_OAFID,
-     /* generates brighness applets instead of regular gnome applets  */
+     /* generates rfkill applets instead of regular gnome applets  */
      RFK_TYPE_INHIBIT_APPLET,
      /* the applet name and version */
      "RFKillApplet", VERSION,
