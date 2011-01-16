@@ -1,3 +1,4 @@
+#define RFK_APPLET_ICON              "rfkill-applet"
 #define RFK_APPLET_ICON_EMITTING     "rfkill-applet-a"
 #define RFK_APPLET_ICON_KILLED       "rfkill-applet-b"
 #define RFK_APPLET_ICON_UNKNOW       "rfkill-applet-c"

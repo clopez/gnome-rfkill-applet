@@ -102,8 +102,8 @@ rfk_applet_dialog_about_cb (BonoboUIComponent *uic, gpointer data, const gchar *
 
     GdkPixbuf *logo =
         gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
-                      RFK_APPLET_ICON_EMITTING,
-                      128, 0, NULL);
+                      RFK_APPLET_ICON,
+                      118, 0, NULL);
 
     static const gchar *authors[] = {
         "Carlos Alberto Lopez Perez <clopez@igalia.com>",
