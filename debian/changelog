@@ -1,0 +1,5 @@
+gnome-rfkill-applet (0.1) unstable; urgency=low
+
+  * Initial release
+
+ -- Carlos Alberto Lopez Perez <clopez@igalia.com>  Sun, 16 Jan 2011 20:25:00 +0100

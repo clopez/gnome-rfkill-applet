@@ -1,0 +1,16 @@
+Source: gnome-rfkill-applet
+Section: gnome
+Priority: optional
+Maintainer: Carlos Alberto Lopez Perez <clopez@igalia.com>
+Build-Depends: cdbs, debhelper (>= 5.0.51~), imagemagick, libpanel-applet2-dev
+Standards-Version: 3.8.4
+Vcs-Git: git://gitorious.org/gnome-applet-rfkill/gnome-applet-rfkill.git
+Homepage: http://gitorious.org/gnome-applet-rfkill
+
+Package: gnome-rfkill-applet
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: An applet for GNOME that lets the user to inhibit the emission
+ of radiation from RF devices with a simple click on the applet icon.
+ The device radiation parameter manipulation is done using the special device
+ /dev/rfkill

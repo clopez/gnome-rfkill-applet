@@ -116,7 +116,7 @@ rfk_applet_dialog_about_cb (BonoboUIComponent *uic, gpointer data, const gchar *
     };
     const char *license[] = {
          N_("Licensed under the GNU General Public License Version 2"),
-         N_("Power Manager is free software; you can redistribute it and/or\n"
+         N_("RFKill Applet is free software; you can redistribute it and/or\n"
            "modify it under the terms of the GNU General Public License\n"
            "as published by the Free Software Foundation; either version 2\n"
            "of the License, or (at your option) any later version."),
