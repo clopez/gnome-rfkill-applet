@@ -18,6 +18,7 @@ build/icons:
 	)
 
 build/rfkillapplet:
+	mkdir -p build
 	$(CC) $(CFLAGS) src/rfkillapplet.c -o $@
 
 install: build/icons build/rfkillapplet
