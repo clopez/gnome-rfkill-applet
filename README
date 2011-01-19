@@ -1,9 +1,20 @@
+VERSION REQUIREMENTS
+--------------------
+This software requires:
+
+    * linux-kernel >= 2.6.31
+    * libgtk2.0 >= 2.17.7
+
+If you are ussing Debian 5.0 Lenny you can get this packages from the
+backports repository.
+
+
 BUILD INSTRUCTIONS
 ------------------
 
 * First, install build dependencies.
   On Debian / Ubuntu just install the following packages:
-    sudo apt-get install build-essential libpanel-applet2-dev imagemagick
+    sudo apt-get install build-essential libpanel-applet2-dev libgtk2.0-dev imagemagick
 
 * Then build it::
     make
@@ -11,12 +22,20 @@ BUILD INSTRUCTIONS
 * And install it::
     sudo make install
 
+* Optionally you can build a debian-package with::
+    dpkg-buildpackage
+
 
 Now restart your gnome session and add the applet to the panel.
 
 
-SYSTEM PATHS
-------------
+NOTES
+-----
 
 * The paths are the standard of Debian systems and are hardcoded in the files
   "Makefile" and "src/rfkillapplet.h", change them if you need.
+
+* The detailed build requirements are specified in the file debian/control
+
+* The device /dev/rfkill was introduced in Linux Kernel 2.6.31-rc1, so you
+  must run a kernel 2.6.31 or newer.

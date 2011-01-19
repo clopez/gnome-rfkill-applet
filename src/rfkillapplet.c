@@ -453,6 +453,6 @@ PANEL_APPLET_BONOBO_FACTORY
      /* generates rfkill applets instead of regular gnome applets  */
      RFK_TYPE_INHIBIT_APPLET,
      /* the applet name and version */
-     "RFKillApplet", VERSION,
+     "RFKillApplet", RFK_APPLET_VERSION,
      /* our callback (with no user data) */
      rfk_applet_bonobo_cb, NULL);

@@ -171,6 +171,8 @@ rfkill_get_status (RFKillApplet *applet)
         if (len < 0) {
             if (errno == EAGAIN) {
                 close(fd);
+                if ( applet->tooltip == "\0" )
+                    applet->tooltip = "No RF devices found";
                 break;
                 }
             applet->tooltip = "ERROR:\nReading of RFKILL events failed";
