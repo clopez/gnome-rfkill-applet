@@ -7,7 +7,7 @@
 
 #define RFK_INHIBIT_APPLET_NAME         _("RFKill Applet")
 #define RFK_INHIBIT_APPLET_DESC         _("Allows user to inhibit the emission of radiation from RF devices.")
-#define RFK_HOMEPAGE_URL                "http://gitorious.org/gnome-applet-rfkill"
+#define RFK_HOMEPAGE_URL                "http://gitorious.org/gnome-rfkill-applet"
 #define RFK_APPLET_VERSION              "0.1"
 
 /* Replace this paths for if you need it */
